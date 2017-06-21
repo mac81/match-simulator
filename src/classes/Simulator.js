@@ -55,6 +55,8 @@ export default class Simulator {
     this.ballAtZone = 2;
     this.hometeam = home;
     this.awayteam = away;
+    this.homeScore = 0;
+    this.awayScore = 0;
 
     this.goalkeeperEvents = new GoalkeeperEvents(home, away);
     this.defenceEvents = new DefenceEvents(home, away);
@@ -80,13 +82,12 @@ export default class Simulator {
   }
 
   simulateMatch() {
-    let event = null;
-    let homescore = 0;
-    let awayscore = 0;
+    let event = {
+      key: 'kickoff'
+    };
 
     const eventMessages = {
       events: [],
-      score: `${homescore} - ${awayscore}`,
       stats: {
         home: {
           onTarget: 0,
@@ -98,49 +99,67 @@ export default class Simulator {
 
     for(let min = 0; min <= 90; min++ ) {
 
-      if(!event) {
-        eventMessages.events.push(i18next.t('kickoff', {
-          team: this.hometeam.name
-        }))
-      }
+      // if(!event) {
+      //   eventMessages.events.push(i18next.t('kickoff', {
+      //     team: this.hometeam.name
+      //   }))
+      // }
 
       event = this.simulateEvent(event);
 
+      // if(event.result.type === 'goal') {
+      //   event = {
+      //     ...event,
+      //     keyEvent: true
+      //   }
+      // }
+
+      console.log(event);
+
       eventMessages.events.push({
-        time: `#### ${min} ####`,
-        attempt: i18next.t(`${event.attempt.type}.${event.attempt.from}.attempt`, {
-          attackingTeam: event.teams.attempt.name,
-          defendingTeam: event.teams.opponent.name,
-          from: event.attempt.from,
-          to: event.attempt.to
-        }),
-        result: i18next.t(`${event.attempt.type}.${event.attempt.from}.${event.result.type}`, {
-          attackingTeam: event.teams.attempt.name,
-          defendingTeam: event.teams.opponent.name,
-          from: event.attempt.from,
-          to: event.attempt.to
-        })
+        time: min,
+        data: event,
+        messages: [
+          i18next.t(`${event.key}.${event.from}.attempt`, {
+            attackingTeam: event.teams.attempt.name,
+            defendingTeam: event.teams.opponent.name,
+            from: event.from,
+            to: event.to
+          }),
+          i18next.t(`${event.key}.${event.from}.${event.result}`, {
+            attackingTeam: event.teams.attempt.name,
+            defendingTeam: event.teams.opponent.name,
+            from: event.from,
+            to: event.to
+          })
+        ]
       });
 
-      // Best teams should average around 7 per game, worst teams around 2.5
-      if(event.attempt.type === 'on-target-shot') {
-        eventMessages.stats.home.onTarget += 1;
-      }
-
-      // Best teams should average around 18 per game, worst teams around 9
-      if(event.attempt.type === 'off-target-shot') {
-        eventMessages.stats.home.offTarget += 1;
-      }
-
-      if(event.result.type === 'goal') {
-        this.getTeamInPossesion() === 0 ? homescore++ : awayscore++;
-        eventMessages.score = `${homescore} - ${awayscore}`;
-        eventMessages.events.push(i18next.t('kickoff', {
-          team: event.teams.opponent.name
-        }))
-      }
-
+      //
+      // // Best teams should average around 7 per game, worst teams around 2.5
+      // if(event.attempt.type === 'on-target-shot') {
+      //   eventMessages.stats.home.onTarget += 1;
+      // }
+      //
+      // // Best teams should average around 18 per game, worst teams around 9
+      // if(event.attempt.type === 'off-target-shot') {
+      //   eventMessages.stats.home.offTarget += 1;
+      // }
+      //
+      // if(event.result.type === 'goal') {
+      //   this.getTeamInPossesion() === 0 ? homescore++ : awayscore++;
+      //   eventMessages.score = `${homescore} - ${awayscore}`;
+      //   eventMessages.events.push(i18next.t('kickoff', {
+      //     team: event.teams.opponent.name
+      //   }))
+      // }
+      //
       event = this.eventHandler(event);
+    }
+
+    eventMessages.score = {
+      home: this.homeScore,
+      away: this.awayScore
     }
 
     return eventMessages;
@@ -173,25 +192,29 @@ export default class Simulator {
   }
 
   eventHandler(event) {
-    if(event.attempt.to === 'defence' && event.result.type === 'success') {
+    if(event.to === 'defence' && event.result === 'success') {
       this.setBallPosition(this.getTeamInPossesion() === 0 ? 1 : 3);
     }
 
-    if(event.attempt.to === 'midfield') {
+    if(event.to === 'midfield') {
       this.setBallPosition(2);
     }
 
-    if(event.attempt.to === 'offence') {
+    if(event.to === 'offence' && event.result === 'success') {
       this.setBallPosition(this.getTeamInPossesion() === 0 ? 3 : 1);
     }
 
-    if(event.result.type === 'save' || event.result.type === 'goalkick') {
+    if(event.result === 'save' || event.result === 'goalkick') {
       this.setBallPosition(this.getTeamInPossesion() === 0 ? 4 : 0);
-    } else if(event.result.type === 'goal') {
+    } else if(event.result === 'goal') {
       this.setBallPosition(2);
     }
 
-    if(event.result.switchTeams) {
+    if(event.result === 'goal') {
+      this.getTeamInPossesion() === 0 ? this.homeScore++ : this.awayScore++;
+    }
+
+    if(event.switchTeams) {
       this.setTeamInPossesion();
     }
 

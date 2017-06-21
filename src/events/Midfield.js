@@ -4,7 +4,8 @@ const MIDFIELD_EVENTS = {
   0: 'shortpass',
   1: 'longpass',
   2: 'dribble',
-  3: 'header'
+  3: 'header',
+  4: 'kickoff'
 };
 
 export class MidfieldEvents {
@@ -25,22 +26,19 @@ export class MidfieldEvents {
   simulate(teamInPossesion, prevEvent) {
     this.teamInPossesion = teamInPossesion;
     this.prevEvent = prevEvent;
+    let event = {};
 
     const eventId = Math.floor(Math.random() * 4) + 1;
-    const event = 'shortpass'//MIDFIELD_EVENTS[eventId];
+
+    if(prevEvent.key === 'kickoff') {
+      event = 'shortpass'//MIDFIELD_EVENTS[eventId];
+    } else {
+      event = 'shortpass'//MIDFIELD_EVENTS[eventId];
+    }
 
     switch(event) {
     case 'shortpass':
       return this.shortpass();
-    case 'longpass':
-      console.log('long ball');
-      break;
-    case 'dribble':
-      console.log('dribble');
-      break;
-    case 'header':
-      console.log('header');
-      break;
     }
   }
 
@@ -63,51 +61,39 @@ export class MidfieldEvents {
       const failureProbability = attackingTeam.midfield.positioning + Math.floor(Math.random() * 5) + 1;
       if(successProbability > failureProbability) {
         return {
+          key: 'shortpass',
+          result: 'success',
+          from: 'midfield',
+          to: 'midfield',
+          switchTeams: false,
           teams: {
             attempt: attackingTeam,
             opponent: defendingTeam
-          },
-          attempt: {
-            type: 'shortpass',
-            from: 'midfield',
-            to: 'midfield'
-          },
-          result: {
-            type: 'success',
-            switchTeams: false
           }
         }
       } else {
         return {
+          key: 'shortpass',
+          result: 'fail',
+          from: 'midfield',
+          to: 'midfield',
+          switchTeams: true,
           teams: {
             attempt: attackingTeam,
             opponent: defendingTeam
-          },
-          attempt: {
-            type: 'shortpass',
-            from: 'midfield',
-            to: 'midfield'
-          },
-          result: {
-            type: 'fail',
-            switchTeams: true
           }
         }
       }
     } else {
       return {
+        key: 'shortpass',
+        result: 'intercept',
+        from: 'midfield',
+        to: 'midfield',
+        switchTeams: true,
         teams: {
           attempt: attackingTeam,
           opponent: defendingTeam
-        },
-        attempt: {
-          type: 'shortpass',
-          from: 'midfield',
-          to: 'midfield'
-        },
-        result: {
-          type: 'intercept',
-          switchTeams: true
         }
       }
     }
@@ -128,34 +114,26 @@ export class MidfieldEvents {
 
       if(attackProbability > defenceProbability) {
         return {
+          key: 'shortpass',
+          result: 'success',
+          from: 'midfield',
+          to: 'offence',
+          switchTeams: false,
           teams: {
             attempt: attackingTeam,
             opponent: defendingTeam
-          },
-          attempt: {
-            type: 'shortpass',
-            from: 'midfield',
-            to: 'offence'
-          },
-          result: {
-            type: 'success',
-            switchTeams: false
           }
         }
       } else {
         return {
+          key: 'shortpass',
+          result: 'intercept',
+          from: 'midfield',
+          to: 'offence',
+          switchTeams: true,
           teams: {
             attempt: attackingTeam,
             opponent: defendingTeam
-          },
-          attempt: {
-            type: 'shortpass',
-            from: 'midfield',
-            to: 'offence'
-          },
-          result: {
-            type: 'intercept',
-            switchTeams: true
           }
         }
       }

@@ -23,15 +23,24 @@ class App extends Component {
 
   render() {
 
-
+    console.log(this.state.simulation)
     return (
       <div className="app">
         <button onClick={this.simulate}>Simulate</button>
-        <ul>
+        {this.state.simulation && (
+          <div className="final-result">{`${this.state.simulation.score.home} - ${this.state.simulation.score.away}`}</div>
+        )}
+        <div>
         {this.state.simulation && this.state.simulation.events.map((event, index) => (
-          <li key={index}>{event.attempt || event} {event.result}</li>
+          <ul key={index} className={event.data.result}>
+            {event.messages.map((message, index) => (
+              <li key={index}>
+                {`${event.time}: [${event.data.key}] ${message}`}
+              </li>
+            ))}
+          </ul>
         ))}
-        </ul>
+        </div>
       </div>
     );
   }

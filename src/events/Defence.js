@@ -24,18 +24,14 @@ export class DefenceEvents {
 
   shortpass() {
     return {
+      key: 'shortpass',
+      result: 'success',
+      from: 'defence',
+      to: 'midfield',
+      switchTeams: false,
       teams: {
         attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
         opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      },
-      attempt: {
-        type: 'shortpass',
-        from: 'defence',
-        to: 'midfield'
-      },
-      result: {
-        type: 'success',
-        switchTeams: false
       }
     }
   }

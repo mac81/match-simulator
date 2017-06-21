@@ -15,7 +15,7 @@ export class GoalkeeperEvents {
     this.teamInPossesion = teamInPossesion;
 
     const eventId = Math.floor(Math.random() * 4) + 1;
-    const eventType = prevEvent && prevEvent.result.type === 'goalkick' ? GOALKEEPER_EVENTS[2] : GOALKEEPER_EVENTS[0];
+    const eventType = prevEvent && prevEvent.result === 'goalkick' ? GOALKEEPER_EVENTS[2] : GOALKEEPER_EVENTS[0];
 
     switch(eventType) {
     case 'short-throw':
@@ -27,36 +27,28 @@ export class GoalkeeperEvents {
 
   shortThrow() {
     return {
+      key: 'short-throw',
+      result: 'success',
+      from: 'goalkeeper',
+      to: 'defence',
+      switchTeams: false,
       teams: {
         attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
         opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      },
-      attempt: {
-        type: 'short-throw',
-        from: 'goalkeeper',
-        to: 'defence'
-      },
-      result: {
-        type: 'success',
-        switchTeams: false
       }
     }
   }
 
   goalkick() {
     return {
+      key: 'goalkick',
+      result: 'success',
+      from: 'goalkeeper',
+      to: 'defence',
+      switchTeams: false,
       teams: {
         attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
         opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      },
-      attempt: {
-        type: 'goalkick',
-        from: 'goalkeeper',
-        to: 'defence'
-      },
-      result: {
-        type: 'success',
-        switchTeams: false
       }
     }
   }

@@ -42,14 +42,14 @@ const eventMessages = {
       fail: '{{attackingTeam}} makes a dreadful pass and the ball goes to a throw in'
     }
   },
-  'on-target-shot': {
+  'shot-on-target': {
     offence: {
       attempt: '{{attackingTeam}} hammers it towards goal',
       goal: '{{attackingTeam}} scores!!!',
       save: '{{defendingTeam}} makes a great save',
     }
   },
-  'off-target-shot': {
+  'shot-off-target': {
     offence: {
       attempt: '{{attackingTeam}} shoots',
       goalkick: '{{attackingTeam}} misses by a mile. Goalkick to {{defendingTeam}}'

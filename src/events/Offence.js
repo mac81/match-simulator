@@ -61,18 +61,14 @@ export class OffenceEvents {
     const resultOutcome = weighted.select(resultOptions);
 
     return {
+      key: `shot-${shotOutcome}`,
+      result: resultOutcome,
+      from: 'offence',
+      to: 'offence',
+      switchTeams: true,
       teams: {
         attempt: attackingTeam,
         opponent: defendingTeam
-      },
-      attempt: {
-        type: `${shotOutcome}-shot`,
-        from: 'offence',
-        to: 'offence'
-      },
-      result: {
-        type: resultOutcome,
-        switchTeams: true
       }
     }
   }
