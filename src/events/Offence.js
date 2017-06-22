@@ -38,14 +38,22 @@ export class OffenceEvents {
     const attackingTeam = this.getAttackingTeam();
     const defendingTeam = this.getDefendingTeam();
 
+    const rand = (Math.floor(Math.random() * 20) + 1);
+    const onTarget = attackingTeam.offence.finishing - rand;
+    const offTarget = 100 - onTarget;
+
     const shotOptions = {
-      'on-target': 0.5,
-      'off-target': 0.5
+      'on-target': onTarget / 100,
+      'off-target': offTarget / 100
     };
 
     const shotOutcome = weighted.select(shotOptions);
 
     let resultOptions;
+
+    // const rand = (Math.floor(Math.random() * 20) + 1);
+    // const attacker = attackingTeam.offence.finishing - rand; // 40
+    // const goalkeeper = defendingTeam.gk - rand; // 45
 
     if(shotOutcome === 'on-target') {
       resultOptions = {

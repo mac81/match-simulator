@@ -8,14 +8,14 @@ class App extends Component {
   constructor(...args) {
     super(...args);
 
-    this.match = new Match();
     this.state = {
       simulation: null
     }
   }
 
   simulate = () => {
-    const simulation = this.match.simulate();
+    const match = new Match();
+    const simulation = match.simulate();
     this.setState({
       simulation
     })

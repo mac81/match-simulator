@@ -50,7 +50,8 @@ import {OffenceEvents} from '../events/Offence';
 
 export default class Simulator {
 
-  constructor(home, away) {
+  constructor(home, away, onlyKeyEvents = false) {
+    this.onlyKeyEvents = onlyKeyEvents;
     this.teamInPossesion = 0;
     this.ballAtZone = 2;
     this.hometeam = home;
@@ -79,6 +80,12 @@ export default class Simulator {
 
   getBallPosition() {
     return this.ballAtZone;
+  }
+
+  isKeyEvent(event) {
+    if(event.result === 'goal' || event.key === 'shot-on-target' || event.key === 'shot-off-target') {
+      return true;
+    }
   }
 
   simulateMatch() {
@@ -116,24 +123,49 @@ export default class Simulator {
 
       console.log(event);
 
-      eventMessages.events.push({
-        time: min,
-        data: event,
-        messages: [
-          i18next.t(`${event.key}.${event.from}.attempt`, {
-            attackingTeam: event.teams.attempt.name,
-            defendingTeam: event.teams.opponent.name,
-            from: event.from,
-            to: event.to
-          }),
-          i18next.t(`${event.key}.${event.from}.${event.result}`, {
-            attackingTeam: event.teams.attempt.name,
-            defendingTeam: event.teams.opponent.name,
-            from: event.from,
-            to: event.to
-          })
-        ]
-      });
+      if(this.onlyKeyEvents) {
+        if(this.isKeyEvent(event)) {
+          eventMessages.events.push({
+            time: min,
+            data: event,
+            messages: [
+              i18next.t(`${event.key}.${event.from}.attempt`, {
+                attackingTeam: event.teams.attempt.name,
+                defendingTeam: event.teams.opponent.name,
+                from: event.from,
+                to: event.to
+              }),
+              i18next.t(`${event.key}.${event.from}.${event.result}`, {
+                attackingTeam: event.teams.attempt.name,
+                defendingTeam: event.teams.opponent.name,
+                from: event.from,
+                to: event.to
+              })
+            ]
+          });
+        }
+      } else {
+        eventMessages.events.push({
+          time: min,
+          data: event,
+          messages: [
+            i18next.t(`${event.key}.${event.from}.attempt`, {
+              attackingTeam: event.teams.attempt.name,
+              defendingTeam: event.teams.opponent.name,
+              from: event.from,
+              to: event.to
+            }),
+            i18next.t(`${event.key}.${event.from}.${event.result}`, {
+              attackingTeam: event.teams.attempt.name,
+              defendingTeam: event.teams.opponent.name,
+              from: event.from,
+              to: event.to
+            })
+          ]
+        });
+      }
+
+
 
       //
       // // Best teams should average around 7 per game, worst teams around 2.5

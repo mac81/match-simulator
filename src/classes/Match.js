@@ -6,18 +6,21 @@ var home = {
   defence: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
   midfield: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
   offence: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
@@ -30,18 +33,21 @@ var away = {
   defence: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
   midfield: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
   offence: {
     passing: 50,
     technique: 50,
+    finishing: 50,
     positioning: 50,
     tackling: 50
   },
@@ -56,7 +62,7 @@ const TEAMS = {
 export class Match {
 
   constructor() {
-    this.simulator = new Simulator(home, away);
+    this.simulator = new Simulator(home, away, true);
   }
 
   simulate() {
