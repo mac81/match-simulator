@@ -88,64 +88,25 @@ export default class Simulator {
     }
   }
 
-  simulateMatch() {
-    let event = {
-      key: 'kickoff'
-    };
+  logStats(event) {
+    if(event.key === 'shortpass') {
+      this.eventMessages.stats.passing.attempts += 1;
+    }
+    if(event.key === 'shortpass' && event.result === 'success') {
+      this.eventMessages.stats.passing.successful += 1;
+    }
+    if(event.key === 'shortpass' && event.result === 'fail') {
+      this.eventMessages.stats.passing.failed += 1;
+    }
+    if(event.key === 'shortpass' && event.result === 'intercept') {
+      this.eventMessages.stats.passing.intercepted += 1;
+    }
+  }
 
-    const eventMessages = {
-      events: [],
-      stats: {
-        home: {
-          onTarget: 0,
-          offTarget: 0
-        },
-        away: {}
-      }
-    };
-
-    for(let min = 0; min <= 90; min++ ) {
-
-      // if(!event) {
-      //   eventMessages.events.push(i18next.t('kickoff', {
-      //     team: this.hometeam.name
-      //   }))
-      // }
-
-      event = this.simulateEvent(event);
-
-      // if(event.result.type === 'goal') {
-      //   event = {
-      //     ...event,
-      //     keyEvent: true
-      //   }
-      // }
-
-      console.log(event);
-
-      if(this.onlyKeyEvents) {
-        if(this.isKeyEvent(event)) {
-          eventMessages.events.push({
-            time: min,
-            data: event,
-            messages: [
-              i18next.t(`${event.key}.${event.from}.attempt`, {
-                attackingTeam: event.teams.attempt.name,
-                defendingTeam: event.teams.opponent.name,
-                from: event.from,
-                to: event.to
-              }),
-              i18next.t(`${event.key}.${event.from}.${event.result}`, {
-                attackingTeam: event.teams.attempt.name,
-                defendingTeam: event.teams.opponent.name,
-                from: event.from,
-                to: event.to
-              })
-            ]
-          });
-        }
-      } else {
-        eventMessages.events.push({
+  logEvent(min, event) {
+    if(this.onlyKeyEvents) {
+      if(this.isKeyEvent(event)) {
+        this.eventMessages.events.push({
           time: min,
           data: event,
           messages: [
@@ -164,37 +125,69 @@ export default class Simulator {
           ]
         });
       }
+    } else {
+      this.eventMessages.events.push({
+        time: min,
+        data: event,
+        messages: [
+          i18next.t(`${event.key}.${event.from}.attempt`, {
+            attackingTeam: event.teams.attempt.name,
+            defendingTeam: event.teams.opponent.name,
+            from: event.from,
+            to: event.to
+          }),
+          i18next.t(`${event.key}.${event.from}.${event.result}`, {
+            attackingTeam: event.teams.attempt.name,
+            defendingTeam: event.teams.opponent.name,
+            from: event.from,
+            to: event.to
+          })
+        ]
+      });
+    }
+  }
 
+  simulateMatch() {
+    let event = {
+      key: 'kickoff'
+    };
 
+    this.eventMessages = {
+      events: [],
+      stats: {
+        passing: {
+          attempts: 0,
+          successful: 0,
+          failed: 0,
+          intercepted: 0
+        }
+      }
+    };
 
-      //
-      // // Best teams should average around 7 per game, worst teams around 2.5
-      // if(event.attempt.type === 'on-target-shot') {
-      //   eventMessages.stats.home.onTarget += 1;
-      // }
-      //
-      // // Best teams should average around 18 per game, worst teams around 9
-      // if(event.attempt.type === 'off-target-shot') {
-      //   eventMessages.stats.home.offTarget += 1;
-      // }
-      //
-      // if(event.result.type === 'goal') {
-      //   this.getTeamInPossesion() === 0 ? homescore++ : awayscore++;
-      //   eventMessages.score = `${homescore} - ${awayscore}`;
-      //   eventMessages.events.push(i18next.t('kickoff', {
-      //     team: event.teams.opponent.name
-      //   }))
-      // }
-      //
+    for(let min = 0; min <= 90; min++ ) {
+      event = this.simulateEvent(event);
+      this.logEvent(min, event);
+      this.logStats(event);
+      event = this.eventHandler(event);
+
+      event = this.simulateEvent(event);
+      this.logEvent(min, event);
+      this.logStats(event);
+      event = this.eventHandler(event);
+
+      event = this.simulateEvent(event);
+      this.logEvent(min, event);
+      this.logStats(event);
       event = this.eventHandler(event);
     }
 
-    eventMessages.score = {
+    this.eventMessages.score = {
       home: this.homeScore,
       away: this.awayScore
-    }
+    };
+    this.eventMessages.log = this.stats;
 
-    return eventMessages;
+    return this.eventMessages;
   }
 
   simulateEvent(prevEvent) {

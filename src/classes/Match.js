@@ -62,7 +62,7 @@ const TEAMS = {
 export class Match {
 
   constructor() {
-    this.simulator = new Simulator(home, away, true);
+    this.simulator = new Simulator(home, away, false);
   }
 
   simulate() {

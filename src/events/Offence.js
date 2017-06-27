@@ -1,10 +1,11 @@
 import weighted from 'weighted';
+import { random } from '../utils/utils';
+import { EVENTS as events } from './events';
 
-const ATTACK_EVENTS = {
-  0: 'shortpass',
-  1: 'dribble',
-  2: 'shot',
-  3: 'header'
+const OFFENCE_EVENTS = {
+  1: events.SHORTPASS,
+  2: events.DRIBBLE,
+  3: events.SHOT
 };
 
 export class OffenceEvents {
@@ -22,14 +23,22 @@ export class OffenceEvents {
     return this.teamInPossesion === 0 ? this.awayteam : this.hometeam;
   }
 
-  simulate(teamInPossesion) {
+  simulate(teamInPossesion, prevEvent) {
     this.teamInPossesion = teamInPossesion;
 
-    const eventId = Math.floor(Math.random() * 4) + 1;
-    const eventType = 'shot'//MIDFIELD_EVENTS[eventId];
+    let eventType;
+    if(prevEvent.key === events.SHORTPASS) {
+      eventType = OFFENCE_EVENTS[random(2)];
+    } else {
+      eventType = OFFENCE_EVENTS[3];
+    }
 
     switch(eventType) {
-    case 'shot':
+    case events.SHORTPASS:
+      return this.dribble();
+    case events.DRIBBLE:
+      return this.dribble();
+    case events.SHOT:
       return this.shot();
     }
   }
@@ -38,8 +47,7 @@ export class OffenceEvents {
     const attackingTeam = this.getAttackingTeam();
     const defendingTeam = this.getDefendingTeam();
 
-    const rand = (Math.floor(Math.random() * 20) + 1);
-    const onTarget = attackingTeam.offence.finishing - rand;
+    const onTarget = attackingTeam.offence.finishing - random(20);
     const offTarget = 100 - onTarget;
 
     const shotOptions = {
@@ -49,24 +57,16 @@ export class OffenceEvents {
 
     const shotOutcome = weighted.select(shotOptions);
 
-    let resultOptions;
-
-    // const rand = (Math.floor(Math.random() * 20) + 1);
-    // const attacker = attackingTeam.offence.finishing - rand; // 40
-    // const goalkeeper = defendingTeam.gk - rand; // 45
+    let resultOutcome;
 
     if(shotOutcome === 'on-target') {
-      resultOptions = {
-        'goal': 0.5,
-        'save': 0.5
-      };
-    } else {
-      resultOptions = {
-        'goalkick': 1
-      };
-    }
+      const attacker = attackingTeam.offence.finishing - random(20);
+      const goalkeeper = defendingTeam.gk - random(20);
 
-    const resultOutcome = weighted.select(resultOptions);
+      resultOutcome = attacker > goalkeeper ? 'goal' : 'save';
+    } else {
+      resultOutcome = 'goalkick';
+    }
 
     return {
       key: `shot-${shotOutcome}`,
@@ -77,6 +77,40 @@ export class OffenceEvents {
       teams: {
         attempt: attackingTeam,
         opponent: defendingTeam
+      }
+    }
+  }
+
+  dribble() {
+    const attackingTeam = this.getAttackingTeam();
+    const defendingTeam = this.getDefendingTeam();
+
+    const attackProbability = attackingTeam.offence.technique - random(20);
+    const defenceProbability = defendingTeam.defence.tackling - random(20);
+
+    if(attackProbability > defenceProbability) {
+      return {
+        key: `dribble`,
+        result: 'success',
+        from: 'offence',
+        to: 'offence',
+        switchTeams: false,
+        teams: {
+          attempt: attackingTeam,
+          opponent: defendingTeam
+        }
+      }
+    } else {
+      return {
+        key: 'dribble',
+        result: 'fail',
+        from: 'offence',
+        to: 'offence',
+        switchTeams: true,
+        teams: {
+          attempt: attackingTeam,
+          opponent: defendingTeam
+        }
       }
     }
   }
