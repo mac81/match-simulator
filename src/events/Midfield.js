@@ -51,8 +51,8 @@ export class MidfieldEvents {
     const attackingTeam = this.getAttackingTeam();
     const defendingTeam = this.getDefendingTeam();
 
-    const attackProbability = (attackingTeam.midfield.passing + attackingTeam.midfield.positioning) - random(20);
-    const defenceProbability = (defendingTeam.midfield.positioning + defendingTeam.midfield.tackling) - random(20);
+    const attackProbability = ((attackingTeam.midfield.passing + attackingTeam.midfield.positioning) / 2) - random(20);
+    const defenceProbability = (defendingTeam.midfield.positioning) - random(20);
 
     if(attackProbability > defenceProbability) {
       const successProbability = attackingTeam.midfield.passing + random(20);

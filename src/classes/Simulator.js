@@ -101,6 +101,16 @@ export default class Simulator {
     if(event.key === 'shortpass' && event.result === 'intercept') {
       this.eventMessages.stats.passing.intercepted += 1;
     }
+
+    if(event.key.includes('shot')) {
+      this.eventMessages.stats.shots.attempts += 1;
+    }
+    if(event.key === 'shot-on-target') {
+      this.eventMessages.stats.shots['on-target'] += 1;
+    }
+    if(event.key === 'shot-off-target') {
+      this.eventMessages.stats.shots['off-target'] += 1;
+    }
   }
 
   logEvent(min, event) {
@@ -160,6 +170,11 @@ export default class Simulator {
           successful: 0,
           failed: 0,
           intercepted: 0
+        },
+        shots: {
+          attempts: 0,
+          'on-target': 0,
+          'off-target': 0
         }
       }
     };

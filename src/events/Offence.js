@@ -28,6 +28,7 @@ export class OffenceEvents {
 
     let eventType;
     if(prevEvent.key === events.SHORTPASS) {
+      //TODO: Calculate if event should be shortpass, flick, dribble etc based on offence skills vs defence skills
       eventType = OFFENCE_EVENTS[random(2)];
     } else {
       eventType = OFFENCE_EVENTS[3];
