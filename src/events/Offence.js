@@ -28,8 +28,31 @@ export class OffenceEvents {
 
     let eventType;
     if(prevEvent.key === events.SHORTPASS) {
-      //TODO: Calculate if event should be shortpass, flick, dribble etc based on offence skills vs defence skills
-      eventType = OFFENCE_EVENTS[random(2)];
+      const attackingTeam = this.getAttackingTeam();
+      const defendingTeam = this.getDefendingTeam();
+
+      const attacker = (attackingTeam.offence.positioning + attackingTeam.offence.technique) / 2 - random(20);
+      const defender = (defendingTeam.defence.positioning + defendingTeam.defence.tackling) / 2 - random(20);
+
+      console.log(attacker, ' - ', defender);
+
+      if(attacker > defender) {
+        // Return flick, shortpass, turn and dribble, turn and shoot
+        eventType = OFFENCE_EVENTS[random(2)];
+      } else {
+        // tackle success, freekick
+        return {
+          key: 'tackle',
+          result: 'success',
+          from: 'offence',
+          to: 'defence',
+          switchTeams: true,
+          teams: {
+            attempt: attackingTeam,
+            opponent: defendingTeam
+          }
+        }
+      }
     } else {
       eventType = OFFENCE_EVENTS[3];
     }

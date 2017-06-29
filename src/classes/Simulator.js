@@ -202,6 +202,13 @@ export default class Simulator {
     };
     this.eventMessages.log = this.stats;
 
+    // const test = this.eventMessages.events.filter(el => {
+    //   return el.data.key === 'tackle';
+    // });
+    //
+    // console.log(test);
+
+
     return this.eventMessages;
   }
 

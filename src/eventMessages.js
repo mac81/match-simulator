@@ -54,6 +54,12 @@ const eventMessages = {
       attempt: '{{attackingTeam}} shoots',
       goalkick: '{{attackingTeam}} misses by a mile. Goalkick to {{defendingTeam}}'
     }
+  },
+  tackle: {
+    offence: {
+      attempt: '{{defendingTeam}} tackles',
+      success: '{{defendingTeam}} makes a important tackle.',
+    }
   }
 }
 
