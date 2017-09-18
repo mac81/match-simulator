@@ -1,7 +1,10 @@
+import {EVENTS, RESULTS} from './events';
+import { random } from '../utils/utils';
+
 const GOALKEEPER_EVENTS = {
-  0: 'short-throw',
-  1: 'longKick',
-  2: 'goalkick'
+  0: EVENTS.SHORT_THROW,
+  1: EVENTS.LONG_KICK,
+  2: EVENTS.GOAL_KICK
 };
 
 export class GoalkeeperEvents {
@@ -13,22 +16,28 @@ export class GoalkeeperEvents {
 
   simulate(teamInPossesion, prevEvent) {
     this.teamInPossesion = teamInPossesion;
+    let event = {};
 
-    const eventId = Math.floor(Math.random() * 4) + 1;
-    const eventType = prevEvent && prevEvent.result === 'goalkick' ? GOALKEEPER_EVENTS[2] : GOALKEEPER_EVENTS[0];
+    if(prevEvent || prevEvent.result === RESULTS.GOAL_KICK) {
+      event = GOALKEEPER_EVENTS[2]
+    } else {
+      event = GOALKEEPER_EVENTS[random(2)]
+    }
 
-    switch(eventType) {
-    case 'short-throw':
+
+    switch(event) {
+    case EVENTS.SHORT_THROW:
+    case EVENTS.LONG_KICK:
       return this.shortThrow();
-    case 'goalkick':
-      return this.goalkick();
+    case EVENTS.GOAL_KICK:
+      return this.goalKick();
     }
   }
 
   shortThrow() {
     return {
-      key: 'short-throw',
-      result: 'success',
+      key: EVENTS.SHORT_THROW,
+      result: RESULTS.SUCCESSFUL,
       from: 'goalkeeper',
       to: 'defence',
       switchTeams: false,
@@ -39,10 +48,10 @@ export class GoalkeeperEvents {
     }
   }
 
-  goalkick() {
+  goalKick() {
     return {
-      key: 'goalkick',
-      result: 'success',
+      key: EVENTS.GOAL_KICK,
+      result: RESULTS.SUCCESSFUL,
       from: 'goalkeeper',
       to: 'defence',
       switchTeams: false,

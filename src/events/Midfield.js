@@ -1,14 +1,14 @@
 import weighted from 'weighted';
 import { random } from '../utils/utils';
-import { EVENTS as events } from './events';
+import {EVENTS, RESULTS} from './events';
 
 const MIDFIELD_EVENTS = {
-  1: events.SHORTPASS,
-  2: events.THROUGHBALL,
-  3: events.LONGPASS,
-  4: events.DRIBBLE,
-  5: events.HEADER,
-  6: events.KICKOFF
+  1: EVENTS.SHORTPASS,
+  2: EVENTS.THROUGHBALL,
+  3: EVENTS.LONGPASS,
+  4: EVENTS.DRIBBLE,
+  5: EVENTS.HEADER,
+  6: EVENTS.KICKOFF
 };
 
 export class MidfieldEvents {
@@ -19,30 +19,29 @@ export class MidfieldEvents {
   }
 
   getAttackingTeam() {
-    return this.teamInPossesion === 0 ? this.hometeam : this.awayteam;
+    return this.teamInPossession === 0 ? this.hometeam : this.awayteam;
   }
 
   getDefendingTeam() {
-    return this.teamInPossesion === 0 ? this.awayteam : this.hometeam;
+    return this.teamInPossession === 0 ? this.awayteam : this.hometeam;
   }
 
-  simulate(teamInPossesion, prevEvent) {
-    this.teamInPossesion = teamInPossesion;
-    this.prevEvent = prevEvent;
+  simulate(teamInPossession, prevEvent) {
+    this.teamInPossession = teamInPossession;
     let event = {};
 
-    const eventId = Math.floor(Math.random() * 4) + 1;
-
-    if(prevEvent.key === events.KICKOFF) {
-      event = 'shortpass'//MIDFIELD_EVENTS[eventId];
+    if(!prevEvent || prevEvent.result === RESULTS.GOAL) {
+      event = MIDFIELD_EVENTS[6]
     } else {
       event = MIDFIELD_EVENTS[random(2)]
     }
 
     switch(event) {
-    case events.SHORTPASS:
+    case EVENTS.KICKOFF:
+      return this.kickoff();
+    case EVENTS.SHORTPASS:
       return this.shortpass();
-    case events.THROUGHBALL:
+    case EVENTS.THROUGHBALL:
       return this.throughball();
     }
   }
@@ -59,8 +58,8 @@ export class MidfieldEvents {
       const failureProbability = attackingTeam.midfield.positioning + random(5);
       if(successProbability > failureProbability) {
         return {
-          key: events.SHORTPASS,
-          result: 'success',
+          key: EVENTS.SHORTPASS,
+          result: RESULTS.SUCCESSFUL,
           from: 'midfield',
           to: 'midfield',
           switchTeams: false,
@@ -71,8 +70,8 @@ export class MidfieldEvents {
         }
       } else {
         return {
-          key: events.SHORTPASS,
-          result: 'fail',
+          key: EVENTS.SHORTPASS,
+          result: RESULTS.FAILED,
           from: 'midfield',
           to: 'midfield',
           switchTeams: true,
@@ -84,8 +83,8 @@ export class MidfieldEvents {
       }
     } else {
       return {
-        key: events.SHORTPASS,
-        result: 'intercept',
+        key: EVENTS.SHORTPASS,
+        result: RESULTS.INTERCEPTED,
         from: 'midfield',
         to: 'midfield',
         switchTeams: true,
@@ -106,8 +105,8 @@ export class MidfieldEvents {
 
     if(attackProbability > defenceProbability) {
       return {
-        key: 'shortpass',
-        result: 'success',
+        key: EVENTS.SHORTPASS,
+        result: RESULTS.SUCCESSFUL,
         from: 'midfield',
         to: 'offence',
         switchTeams: false,
@@ -118,8 +117,8 @@ export class MidfieldEvents {
       }
     } else {
       return {
-        key: 'shortpass',
-        result: 'intercept',
+        key: EVENTS.SHORTPASS,
+        result: RESULTS.INTERCEPTED,
         from: 'midfield',
         to: 'offence',
         switchTeams: true,
@@ -127,6 +126,23 @@ export class MidfieldEvents {
           attempt: attackingTeam,
           opponent: defendingTeam
         }
+      }
+    }
+  }
+
+  kickoff() {
+    const attackingTeam = this.getAttackingTeam();
+    const defendingTeam = this.getDefendingTeam();
+
+    return {
+      key: EVENTS.KICKOFF,
+      result: RESULTS.SUCCESSFUL,
+      from: 'midfield',
+      to: 'midfield',
+      switchTeams: false,
+      teams: {
+        attempt: attackingTeam,
+        opponent: defendingTeam
       }
     }
   }
@@ -149,8 +165,8 @@ export class MidfieldEvents {
     const defendingTeam = this.getDefendingTeam();
 
     return {
-      key: 'throughball',
-      result: 'success',
+      key: EVENTS.THROUGHBALL,
+      result: RESULTS.SUCCESSFUL,
       from: 'midfield',
       to: 'offence',
       switchTeams: false,
