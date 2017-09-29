@@ -1,12 +1,9 @@
-import i18next from 'i18next';
-import weighted from 'weighted';
-import colors from 'colors';
-import { EVENTS, RESULTS} from '../events/events';
+import { RESULTS, ZONES } from '../events/events';
 
-import {GoalkeeperEvents} from '../events/Goalkeeper';
-import {DefenceEvents} from '../events/Defence';
-import {MidfieldEvents} from '../events/Midfield';
-import {OffenceEvents} from '../events/Offence';
+import { GoalkeeperEvents } from '../events/Goalkeeper';
+import { DefenceEvents } from '../events/Defence';
+import { MidfieldEvents } from '../events/Midfield';
+import { OffenceEvents } from '../events/Offence';
 
 /* Zones
  | GK | DEF | MID | OFF | GK |
@@ -50,17 +47,16 @@ import {OffenceEvents} from '../events/Offence';
  */
 
 export default class Simulator {
-
   constructor(home, away) {
     this.teamInPossession = 0;
     this.ballAtZone = 2;
     this.hometeam = home;
     this.awayteam = away;
 
-    this.goalkeeperEvents = new GoalkeeperEvents(home, away);
-    this.defenceEvents = new DefenceEvents(home, away);
-    this.midfieldEvents = new MidfieldEvents(home, away);
-    this.offenceEvents = new OffenceEvents(home, away);
+    this.goalkeeperEvents = new GoalkeeperEvents(this);
+    this.defenceEvents = new DefenceEvents(this);
+    this.midfieldEvents = new MidfieldEvents(this);
+    this.offenceEvents = new OffenceEvents(this);
   }
 
   setTeamInPossession() {
@@ -79,56 +75,65 @@ export default class Simulator {
     return this.ballAtZone;
   }
 
+  getAttemptTeam() {
+    return this.teamInPossession === 0 ? this.hometeam : this.awayteam;
+  }
+
+  getOppositionTeam() {
+    return this.teamInPossession === 0 ? this.awayteam : this.hometeam;
+  }
+
   simulateEvent(prevEvent) {
     const ballPosition = this.getBallPosition();
     const teamInPossession = this.getTeamInPossession();
 
-    switch(ballPosition) {
-    case 0:
-    case 4:
-      return this.eventHandler(this.goalkeeperEvents.simulate(teamInPossession, prevEvent));
-      break;
-    case 1:
-      if(teamInPossession === 0) {
-        return this.eventHandler(this.defenceEvents.simulate(teamInPossession, prevEvent));
-      } else {
-        return this.eventHandler(this.offenceEvents.simulate(teamInPossession, prevEvent));
-      }
-    case 2:
-      return this.eventHandler(this.midfieldEvents.simulate(teamInPossession, prevEvent));
-    case 3:
-      if(teamInPossession === 0) {
-        return this.eventHandler(this.offenceEvents.simulate(teamInPossession, prevEvent));
-      } else {
-        return this.eventHandler(this.defenceEvents.simulate(teamInPossession, prevEvent));
-      }
+    switch (ballPosition) {
+      case 0:
+      case 4:
+        return this.eventHandler(this.goalkeeperEvents.simulate(prevEvent));
+        break;
+      case 1:
+        if (teamInPossession === 0) {
+          return this.eventHandler(this.defenceEvents.simulate(prevEvent));
+        } else {
+          return this.eventHandler(this.offenceEvents.simulate(prevEvent));
+        }
+      case 2:
+        return this.eventHandler(this.midfieldEvents.simulate(prevEvent));
+      case 3:
+        if (teamInPossession === 0) {
+          return this.eventHandler(this.offenceEvents.simulate(prevEvent));
+        } else {
+          return this.eventHandler(
+            this.defenceEvents.simulate(this.getAttemptTeam(), this.getOppositionTeam(), prevEvent)
+          );
+        }
     }
   }
 
   eventHandler(event) {
-    if(event.to === 'defence' && event.result === RESULTS.SUCCESSFUL) {
+    if (event.to === ZONES.DEFENCE && event.result === RESULTS.SUCCESSFUL) {
       this.setBallPosition(this.getTeamInPossession() === 0 ? 1 : 3);
     }
 
-    if(event.to === 'midfield') {
+    if (event.to === ZONES.MIDFIELD) {
       this.setBallPosition(2);
     }
 
-    if(event.to === 'offence' && event.result === RESULTS.SUCCESSFUL) {
+    if (event.to === ZONES.OFFENCE && event.result === RESULTS.SUCCESSFUL) {
       this.setBallPosition(this.getTeamInPossession() === 0 ? 3 : 1);
     }
 
-    if(event.result === 'save' || event.result === 'goalkick') {
+    if (event.result === RESULTS.SAVE || event.result === RESULTS.GOAL_KICK) {
       this.setBallPosition(this.getTeamInPossession() === 0 ? 4 : 0);
-    } else if(event.result === 'goal') {
+    } else if (event.result === RESULTS.GOAL) {
       this.setBallPosition(2);
     }
 
-    if(event.switchTeams) {
+    if (event.switchTeams) {
       this.setTeamInPossession();
     }
 
     return event;
   }
-
 }

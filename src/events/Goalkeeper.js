@@ -1,64 +1,62 @@
-import {EVENTS, RESULTS} from './events';
-import { random } from '../utils/utils';
-
-const GOALKEEPER_EVENTS = {
-  0: EVENTS.SHORT_THROW,
-  1: EVENTS.LONG_KICK,
-  2: EVENTS.GOAL_KICK
-};
+import {
+  GOALKEEPER_EVENTS,
+  SPECIAL_EVENTS,
+  RESULTS,
+  ZONES,
+  getRandomEvent,
+} from './events';
 
 export class GoalkeeperEvents {
-
-  constructor(home, away) {
-    this.hometeam = home;
-    this.awayteam = away;
+  constructor(simulator) {
+    this.simulator = simulator;
   }
 
-  simulate(teamInPossesion, prevEvent) {
-    this.teamInPossesion = teamInPossesion;
+  simulate(prevEvent) {
+    this.attemptingTeam = this.simulator.getAttemptTeam();
+    this.oppositionTeam = this.simulator.getOppositionTeam();
+
     let event = {};
 
-    if(prevEvent || prevEvent.result === RESULTS.GOAL_KICK) {
-      event = GOALKEEPER_EVENTS[2]
+    if (prevEvent || prevEvent.result === RESULTS.GOAL_KICK) {
+      event = SPECIAL_EVENTS.GOAL_KICK;
     } else {
-      event = GOALKEEPER_EVENTS[random(2)]
+      event = getRandomEvent(GOALKEEPER_EVENTS);
     }
 
-
-    switch(event) {
-    case EVENTS.SHORT_THROW:
-    case EVENTS.LONG_KICK:
-      return this.shortThrow();
-    case EVENTS.GOAL_KICK:
-      return this.goalKick();
+    switch (event) {
+      case GOALKEEPER_EVENTS.SHORT_THROW:
+      case GOALKEEPER_EVENTS.LONG_KICK:
+        return this.shortThrow();
+      case SPECIAL_EVENTS.GOAL_KICK:
+        return this.goalKick();
     }
   }
 
   shortThrow() {
     return {
-      key: EVENTS.SHORT_THROW,
+      key: GOALKEEPER_EVENTS.SHORT_THROW,
       result: RESULTS.SUCCESSFUL,
-      from: 'goalkeeper',
-      to: 'defence',
+      from: ZONES.GOALKEEPER,
+      to: ZONES.DEFENCE,
       switchTeams: false,
       teams: {
-        attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
-        opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      }
-    }
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
   }
 
   goalKick() {
     return {
-      key: EVENTS.GOAL_KICK,
+      key: SPECIAL_EVENTS.GOAL_KICK,
       result: RESULTS.SUCCESSFUL,
-      from: 'goalkeeper',
-      to: 'defence',
+      from: ZONES.GOALKEEPER,
+      to: ZONES.DEFENCE,
       switchTeams: false,
       teams: {
-        attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
-        opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      }
-    }
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
   }
 }

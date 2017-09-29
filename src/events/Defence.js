@@ -1,38 +1,35 @@
-const DEFENCE_EVENTS = {
-  0: 'shortpass',
-  1: 'longpass'
-};
+import { DEFENCE_EVENTS, RESULTS, ZONES, getRandomEvent } from './events';
 
 export class DefenceEvents {
-
-  constructor(home, away) {
-    this.hometeam = home;
-    this.awayteam = away;
+  constructor(simulator) {
+    this.simulator = simulator;
   }
 
-  simulate(teamInPossesion) {
-    this.teamInPossesion = teamInPossesion;
+  simulate(prevEvent) {
+    this.attemptingTeam = this.simulator.getAttemptTeam();
+    this.oppositionTeam = this.simulator.getOppositionTeam();
 
-    const eventId = Math.floor(Math.random() * 4) + 1;
-    const eventType = 'shortpass'//MIDFIELD_EVENTS[eventId];
+    const event = getRandomEvent(DEFENCE_EVENTS);
 
-    switch(eventType) {
-    case 'shortpass':
-      return this.shortpass();
+    switch (event) {
+      case DEFENCE_EVENTS.SHORT_PASS:
+        return this.shortPass();
+      case DEFENCE_EVENTS.LONG_PASS:
+        return this.shortPass();
     }
   }
 
-  shortpass() {
+  shortPass() {
     return {
-      key: 'shortpass',
-      result: 'success',
-      from: 'defence',
-      to: 'midfield',
+      key: DEFENCE_EVENTS.SHORT_PASS,
+      result: RESULTS.SUCCESSFUL,
+      from: ZONES.DEFENCE,
+      to: ZONES.MIDFIELD,
       switchTeams: false,
       teams: {
-        attempt: this.teamInPossesion === 0 ? this.hometeam : this.awayteam,
-        opponent: this.teamInPossesion === 0 ? this.awayteam : this.hometeam
-      }
-    }
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
   }
 }

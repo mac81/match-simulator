@@ -1,179 +1,240 @@
 import weighted from 'weighted';
-import { random } from '../utils/utils';
-import {EVENTS, RESULTS} from './events';
-
-const MIDFIELD_EVENTS = {
-  1: EVENTS.SHORTPASS,
-  2: EVENTS.THROUGHBALL,
-  3: EVENTS.LONGPASS,
-  4: EVENTS.DRIBBLE,
-  5: EVENTS.HEADER,
-  6: EVENTS.KICKOFF
-};
+import {random, convertRange} from '../utils/utils';
+import Simulator from '../classes/Simulator';
+import {MIDFIELD_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
 
 export class MidfieldEvents {
-
-  constructor(home, away) {
-    this.hometeam = home;
-    this.awayteam = away;
+  constructor(simulator) {
+    this.simulator = simulator;
   }
 
-  getAttackingTeam() {
-    return this.teamInPossession === 0 ? this.hometeam : this.awayteam;
-  }
-
-  getDefendingTeam() {
-    return this.teamInPossession === 0 ? this.awayteam : this.hometeam;
-  }
-
-  simulate(teamInPossession, prevEvent) {
-    this.teamInPossession = teamInPossession;
+  simulate(prevEvent) {
+    this.attemptingTeam = this.simulator.getAttemptTeam();
+    this.oppositionTeam = this.simulator.getOppositionTeam();
     let event = {};
 
-    if(!prevEvent || prevEvent.result === RESULTS.GOAL) {
-      event = MIDFIELD_EVENTS[6]
+    if (!prevEvent || prevEvent.result === RESULTS.GOAL) {
+      event = SPECIAL_EVENTS.KICKOFF;
     } else {
-      event = MIDFIELD_EVENTS[random(2)]
+      event = getRandomEvent(MIDFIELD_EVENTS); //TODO: Make certain eventtypes happen more regularly
     }
 
-    switch(event) {
-    case EVENTS.KICKOFF:
-      return this.kickoff();
-    case EVENTS.SHORTPASS:
-      return this.shortpass();
-    case EVENTS.THROUGHBALL:
-      return this.throughball();
+    switch (event) {
+      case SPECIAL_EVENTS.KICKOFF:
+        return this.kickoff();
+      case MIDFIELD_EVENTS.SHORT_PASS:
+        return this.shortPass();
+      case MIDFIELD_EVENTS.DRIBBLE:
+        return this.dribble();
+      case MIDFIELD_EVENTS.HEADER:
+        return this.shortPass(); //TODO: Set correct method
+      case MIDFIELD_EVENTS.LONG_PASS:
+        return this.shortPass(); //TODO: Set correct method
+      case MIDFIELD_EVENTS.THROUGH_BALL:
+        return this.throughBall();
     }
   }
 
-  shortpassToMidfield() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
+  shortPassToDefence() {
+    const attemptStats = (this.attemptingTeam.midfield.passing + this.attemptingTeam.defence.positioning) / 2;
+    const oppositionStats = (this.oppositionTeam.midfield.positioning + this.oppositionTeam.offence.positioning) / 2;
 
-    const attackProbability = ((attackingTeam.midfield.passing + attackingTeam.midfield.positioning) / 2) - random(20);
-    const defenceProbability = (defendingTeam.midfield.positioning) - random(20);
+    const successProbability = convertRange(attemptStats - oppositionStats, [-100, 100], [70, 90]);
 
-    if(attackProbability > defenceProbability) {
-      const successProbability = attackingTeam.midfield.passing + random(20);
-      const failureProbability = attackingTeam.midfield.positioning + random(5);
-      if(successProbability > failureProbability) {
-        return {
-          key: EVENTS.SHORTPASS,
-          result: RESULTS.SUCCESSFUL,
-          from: 'midfield',
-          to: 'midfield',
-          switchTeams: false,
-          teams: {
-            attempt: attackingTeam,
-            opponent: defendingTeam
-          }
-        }
-      } else {
-        return {
-          key: EVENTS.SHORTPASS,
-          result: RESULTS.FAILED,
-          from: 'midfield',
-          to: 'midfield',
-          switchTeams: true,
-          teams: {
-            attempt: attackingTeam,
-            opponent: defendingTeam
-          }
-        }
-      }
-    } else {
+    if (successProbability > random(100)) {
       return {
-        key: EVENTS.SHORTPASS,
-        result: RESULTS.INTERCEPTED,
-        from: 'midfield',
-        to: 'midfield',
-        switchTeams: true,
-        teams: {
-          attempt: attackingTeam,
-          opponent: defendingTeam
-        }
-      }
-    }
-  }
-
-  shortpassToOffence() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
-
-    const attackProbability = attackingTeam.midfield.passing + attackingTeam.offence.positioning + random(10);
-    const defenceProbability = defendingTeam.defence.positioning + defendingTeam.midfield.positioning + random(10);
-
-    if(attackProbability > defenceProbability) {
-      return {
-        key: EVENTS.SHORTPASS,
+        key: MIDFIELD_EVENTS.SHORT_PASS,
         result: RESULTS.SUCCESSFUL,
-        from: 'midfield',
-        to: 'offence',
+        from: ZONES.MIDFIELD,
+        to: ZONES.DEFENCE,
         switchTeams: false,
+        logKey: 'passing',
         teams: {
-          attempt: attackingTeam,
-          opponent: defendingTeam
-        }
-      }
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     } else {
       return {
-        key: EVENTS.SHORTPASS,
+        key: MIDFIELD_EVENTS.SHORT_PASS,
         result: RESULTS.INTERCEPTED,
-        from: 'midfield',
-        to: 'offence',
+        from: ZONES.MIDFIELD,
+        to: ZONES.DEFENCE,
         switchTeams: true,
+        logKey: 'passing',
         teams: {
-          attempt: attackingTeam,
-          opponent: defendingTeam
-        }
-      }
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    }
+  }
+
+  shortPassToMidfield() {
+    const attackStats = (this.attemptingTeam.midfield.passing + this.attemptingTeam.midfield.positioning) / 2;
+    const defenceStats = this.oppositionTeam.midfield.positioning;
+
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [70, 90]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: MIDFIELD_EVENTS.SHORT_PASS,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.MIDFIELD,
+        to: ZONES.MIDFIELD,
+        switchTeams: false,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: MIDFIELD_EVENTS.SHORT_PASS,
+        result: RESULTS.INTERCEPTED,
+        from: ZONES.MIDFIELD,
+        to: ZONES.MIDFIELD,
+        switchTeams: true,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    }
+  }
+
+  shortPassToOffence() {
+    const attackStats = this.attemptingTeam.midfield.passing + this.attemptingTeam.offence.positioning;
+    const defenceStats = this.oppositionTeam.defence.positioning + this.oppositionTeam.midfield.positioning;
+
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [70, 90]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: MIDFIELD_EVENTS.SHORT_PASS,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.MIDFIELD,
+        to: ZONES.OFFENCE,
+        switchTeams: false,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: MIDFIELD_EVENTS.SHORT_PASS,
+        result: RESULTS.INTERCEPTED,
+        from: ZONES.MIDFIELD,
+        to: ZONES.OFFENCE,
+        switchTeams: true,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     }
   }
 
   kickoff() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
-
     return {
-      key: EVENTS.KICKOFF,
+      key: SPECIAL_EVENTS.KICKOFF,
       result: RESULTS.SUCCESSFUL,
-      from: 'midfield',
-      to: 'midfield',
+      from: ZONES.MIDFIELD,
+      to: ZONES.MIDFIELD,
       switchTeams: false,
       teams: {
-        attempt: attackingTeam,
-        opponent: defendingTeam
-      }
-    }
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
   }
 
-  shortpass() {
-    const attackingTeam = this.getAttackingTeam();
+  shortPass() {
+    const formation =
+      this.attemptingTeam.formation[0] + this.attemptingTeam.formation[1] + this.attemptingTeam.formation[2];
+    const passTo = random(formation);
 
-    const attackStatPoints = attackingTeam.formation[1] + attackingTeam.formation[2];
-    const passTo = random(attackStatPoints);
-
-    if(passTo <= 4) {
-      return this.shortpassToMidfield();
+    if (passTo <= this.attemptingTeam.formation[0]) {
+      return this.shortPassToDefence();
+    } else if (passTo <= this.attemptingTeam.formation[1]) {
+      return this.shortPassToMidfield();
     } else {
-      return this.shortpassToOffence();
+      return this.shortPassToOffence();
     }
   }
 
-  throughball() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
+  throughBall() {
+    const attackStats = this.attemptingTeam.midfield.passing + this.attemptingTeam.offence.positioning;
+    const defenceStats = this.oppositionTeam.defence.positioning + this.oppositionTeam.midfield.positioning;
 
-    return {
-      key: EVENTS.THROUGHBALL,
-      result: RESULTS.SUCCESSFUL,
-      from: 'midfield',
-      to: 'offence',
-      switchTeams: false,
-      teams: {
-        attempt: attackingTeam,
-        opponent: defendingTeam
-      }
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [70, 90]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: MIDFIELD_EVENTS.THROUGH_BALL,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.MIDFIELD,
+        to: ZONES.OFFENCE,
+        switchTeams: false,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: MIDFIELD_EVENTS.THROUGH_BALL,
+        result: RESULTS.INTERCEPTED,
+        from: ZONES.MIDFIELD,
+        to: ZONES.OFFENCE,
+        switchTeams: true,
+        logKey: 'passing',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    }
+  }
+
+  dribble() {
+    const attackStats = this.attemptingTeam.midfield.technique;
+    const defenceStats = this.oppositionTeam.midfield.tackling;
+
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [50, 70]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: MIDFIELD_EVENTS.DRIBBLE,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.MIDFIELD,
+        to: ZONES.OFFENCE,
+        switchTeams: false,
+        logKey: 'dribble',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: MIDFIELD_EVENTS.DRIBBLE,
+        result: RESULTS.TACKLED,
+        from: ZONES.MIDFIELD,
+        to: ZONES.MIDFIELD,
+        switchTeams: true,
+        logKey: 'dribble',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     }
   }
 }

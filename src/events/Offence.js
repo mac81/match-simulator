@@ -1,141 +1,121 @@
 import weighted from 'weighted';
 import { random } from '../utils/utils';
-import { EVENTS as events } from './events';
-
-const OFFENCE_EVENTS = {
-  1: events.SHORTPASS,
-  2: events.DRIBBLE,
-  3: events.SHOT
-};
+import { EVENTS, OFFENCE_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent } from './events';
 
 export class OffenceEvents {
-
-  constructor(home, away) {
-    this.hometeam = home;
-    this.awayteam = away;
+  constructor(simulator) {
+    this.simulator = simulator;
   }
 
-  getAttackingTeam() {
-    return this.teamInPossesion === 0 ? this.hometeam : this.awayteam;
-  }
+  simulate(prevEvent) {
+    this.attemptingTeam = this.simulator.getAttemptTeam();
+    this.oppositionTeam = this.simulator.getOppositionTeam();
 
-  getDefendingTeam() {
-    return this.teamInPossesion === 0 ? this.awayteam : this.hometeam;
-  }
+    // if prevEvent === SHORT_PASS from midfield
+    // attempt DRIBBLE, SHORT_PASS
 
-  simulate(teamInPossesion, prevEvent) {
-    this.teamInPossesion = teamInPossesion;
+    // if prevEvent === SHORT_PASS from offence
+    // attempt DRIBBLE, SHORT_PASS, SHOT
 
-    let eventType;
-    if(prevEvent.key === events.SHORTPASS) {
-      const attackingTeam = this.getAttackingTeam();
-      const defendingTeam = this.getDefendingTeam();
+    // if prevEvent === THROUGH_BALL
+    // attempt RUN_AT_GOAL_SHOT
+    // outcome GOAL, SAVE, POST, GOAL_KICK, TACKLE
 
-      const attacker = (attackingTeam.offence.positioning + attackingTeam.offence.technique) / 2 - random(20);
-      const defender = (defendingTeam.defence.positioning + defendingTeam.defence.tackling) / 2 - random(20);
+    // if prevEvent === DRIBBLE
+    // attempt SHOT
+    // outcome BLOCK, DEFLECTION, SAVE, POST, GOAL_KICK
 
-      console.log(attacker, ' - ', defender);
+    let event;
 
-      if(attacker > defender) {
-        // Return flick, shortpass, turn and dribble, turn and shoot
-        eventType = OFFENCE_EVENTS[random(2)];
-      } else {
-        // tackle success, freekick
-        return {
-          key: 'tackle',
-          result: 'success',
-          from: 'offence',
-          to: 'defence',
-          switchTeams: true,
-          teams: {
-            attempt: attackingTeam,
-            opponent: defendingTeam
-          }
-        }
-      }
-    } else {
-      eventType = OFFENCE_EVENTS[3];
+    if (prevEvent.key === EVENTS.SHORT_PASS && prevEvent.from === ZONES.MIDFIELD) {
+      const possibleEvents = [OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS];
+      event = getRandomEvent(possibleEvents);
+    } else if (prevEvent.key === EVENTS.SHORT_PASS && prevEvent.from === ZONES.OFFENCE) {
+      const possibleEvents = [OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS, OFFENCE_EVENTS.SHOT];
+      event = getRandomEvent(possibleEvents);
+    } else if (prevEvent.key === EVENTS.THROUGH_BALL) {
+      event = OFFENCE_EVENTS.SHOT;
+    } else if (prevEvent.key === EVENTS.DRIBBLE) {
+      event = OFFENCE_EVENTS.SHOT;
     }
 
-    switch(eventType) {
-    case events.SHORTPASS:
-      return this.dribble();
-    case events.DRIBBLE:
-      return this.dribble();
-    case events.SHOT:
-      return this.shot();
+    switch (event) {
+      case OFFENCE_EVENTS.SHORT_PASS:
+        return this.dribble();
+      case OFFENCE_EVENTS.DRIBBLE:
+        return this.dribble();
+      case OFFENCE_EVENTS.SHOT:
+        return this.shot();
     }
   }
 
   shot() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
-
-    const onTarget = attackingTeam.offence.finishing - random(20);
+    const onTarget = this.attemptingTeam.offence.finishing - random(20);
     const offTarget = 100 - onTarget;
 
     const shotOptions = {
       'on-target': onTarget / 100,
-      'off-target': offTarget / 100
+      'off-target': offTarget / 100,
     };
 
     const shotOutcome = weighted.select(shotOptions);
 
     let resultOutcome;
 
-    if(shotOutcome === 'on-target') {
-      const attacker = attackingTeam.offence.finishing - random(20);
-      const goalkeeper = defendingTeam.gk - random(20);
+    if (shotOutcome === 'on-target') {
+      const attacker = this.attemptingTeam.offence.finishing - random(20);
+      const goalkeeper = this.oppositionTeam.gk - random(20);
 
-      resultOutcome = attacker > goalkeeper ? 'goal' : 'save';
+      //TODO: Calculate chance of deflection, hitting post etc.
+
+      resultOutcome = attacker > goalkeeper ? RESULTS.GOAL : RESULTS.SAVE;
     } else {
-      resultOutcome = 'goalkick';
+      resultOutcome = RESULTS.GOAL_KICK;
     }
 
     return {
       key: `shot-${shotOutcome}`,
       result: resultOutcome,
-      from: 'offence',
-      to: 'offence',
+      from: ZONES.OFFENCE,
+      to: ZONES.OFFENCE,
       switchTeams: true,
+      logKey: 'shot',
+      isKeyEvent: true,
       teams: {
-        attempt: attackingTeam,
-        opponent: defendingTeam
-      }
-    }
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
   }
 
   dribble() {
-    const attackingTeam = this.getAttackingTeam();
-    const defendingTeam = this.getDefendingTeam();
+    const attackProbability = this.attemptingTeam.offence.technique - random(20);
+    const defenceProbability = this.oppositionTeam.defence.tackling - random(20);
 
-    const attackProbability = attackingTeam.offence.technique - random(20);
-    const defenceProbability = defendingTeam.defence.tackling - random(20);
-
-    if(attackProbability > defenceProbability) {
+    if (attackProbability > defenceProbability) {
       return {
-        key: `dribble`,
-        result: 'success',
-        from: 'offence',
-        to: 'offence',
+        key: OFFENCE_EVENTS.DRIBBLE,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.OFFENCE,
+        to: ZONES.OFFENCE,
         switchTeams: false,
         teams: {
-          attempt: attackingTeam,
-          opponent: defendingTeam
-        }
-      }
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     } else {
       return {
-        key: 'dribble',
-        result: 'fail',
-        from: 'offence',
-        to: 'offence',
+        key: OFFENCE_EVENTS.DRIBBLE,
+        result: RESULTS.TACKLED,
+        from: ZONES.OFFENCE,
+        to: ZONES.OFFENCE,
         switchTeams: true,
         teams: {
-          attempt: attackingTeam,
-          opponent: defendingTeam
-        }
-      }
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     }
   }
 }
