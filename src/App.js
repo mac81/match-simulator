@@ -13,54 +13,68 @@ class App extends Component {
       homeTeam: {
         id: 1,
         name: 'United',
-        gk: 50,
+        gk: {
+          passing: 100,
+          throwing: 100,
+          arial: 100,
+          reflexes: 100,
+          oneOnOne: 100,
+        },
         defence: {
-          passing: 50,
-          technique: 50,
-          finishing: 50,
-          positioning: 50,
-          tackling: 50,
+          passing: 100,
+          technique: 100,
+          finishing: 100,
+          positioning: 100,
+          tackling: 100,
         },
         midfield: {
           passing: 100,
-          technique: 50,
-          finishing: 50,
+          technique: 100,
+          finishing: 100,
           positioning: 100,
-          tackling: 50,
+          heading: 100,
+          tackling: 100,
         },
         offence: {
-          passing: 50,
-          technique: 50,
-          finishing: 50,
-          positioning: 50,
-          tackling: 50,
+          passing: 100,
+          technique: 100,
+          finishing: 100,
+          positioning: 100,
+          tackling: 100,
         },
         formation: [4, 4, 2],
       },
       awayTeam: {
         id: 2,
         name: 'City',
-        gk: 50,
+        gk: {
+          passing: 0,
+          throwing: 0,
+          arial: 0,
+          reflexes: 0,
+          oneOnOne: 0,
+        },
         defence: {
-          passing: 50,
-          technique: 50,
-          finishing: 50,
-          positioning: 50,
-          tackling: 50,
+          passing: 0,
+          technique: 0,
+          finishing: 0,
+          positioning: 0,
+          tackling: 0,
         },
         midfield: {
           passing: 0,
-          technique: 50,
-          finishing: 50,
+          technique: 0,
+          finishing: 0,
           positioning: 0,
-          tackling: 50,
+          tackling: 0,
+          heading: 0,
         },
         offence: {
-          passing: 50,
-          technique: 50,
-          finishing: 50,
-          positioning: 50,
-          tackling: 50,
+          passing: 0,
+          technique: 0,
+          finishing: 0,
+          positioning: 0,
+          tackling: 0,
         },
         formation: [4, 4, 2],
       },
@@ -142,6 +156,12 @@ class App extends Component {
     const awaySuccessfulDribbles = stats && stats['dribble']['dribble']['successful'][awayTeam.id];
     const awayDribblePercentage = Math.round(awaySuccessfulDribbles / awayTotalDribbles * 100) || 0;
 
+    const homeTotalShots = stats && stats['shot']['totalShots'][homeTeam.id];
+    const homeShotsOnTarget = stats && stats['shot']['shot-on-target'][homeTeam.id];
+
+    const awayTotalShots = stats && stats['shot']['totalShots'][awayTeam.id];
+    const awayShotsOnTarget = stats && stats['shot']['shot-on-target'][awayTeam.id];
+
     return (
       <div className="app">
         <button onClick={this.simulateMatch} style={{position: 'fixed', top: 0, left: 230}}>
@@ -174,6 +194,21 @@ class App extends Component {
                   <td>{stats['score'][homeTeam.id]}</td>
                   <td>Score</td>
                   <td>{stats['score'][awayTeam.id]}</td>
+                </tr>
+                <tr>
+                  <td>{stats['possession'][homeTeam.id]}</td>
+                  <td>Possession</td>
+                  <td>{stats['possession'][awayTeam.id]}</td>
+                </tr>
+                <tr>
+                  <td>{homeTotalShots}</td>
+                  <td>Shots</td>
+                  <td>{awayTotalShots}</td>
+                </tr>
+                <tr>
+                  <td>{homeShotsOnTarget}</td>
+                  <td>Shots on target</td>
+                  <td>{awayShotsOnTarget}</td>
                 </tr>
                 <tr>
                   <td>{homeTotalPasses}</td>

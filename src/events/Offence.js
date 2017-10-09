@@ -1,6 +1,6 @@
 import weighted from 'weighted';
-import { random } from '../utils/utils';
-import { EVENTS, OFFENCE_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent } from './events';
+import {random, convertRange} from '../utils/utils';
+import {EVENTS, OFFENCE_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
 
 export class OffenceEvents {
   constructor(simulator) {
@@ -10,12 +10,6 @@ export class OffenceEvents {
   simulate(prevEvent) {
     this.attemptingTeam = this.simulator.getAttemptTeam();
     this.oppositionTeam = this.simulator.getOppositionTeam();
-
-    // if prevEvent === SHORT_PASS from midfield
-    // attempt DRIBBLE, SHORT_PASS
-
-    // if prevEvent === SHORT_PASS from offence
-    // attempt DRIBBLE, SHORT_PASS, SHOT
 
     // if prevEvent === THROUGH_BALL
     // attempt RUN_AT_GOAL_SHOT
@@ -28,15 +22,16 @@ export class OffenceEvents {
     let event;
 
     if (prevEvent.key === EVENTS.SHORT_PASS && prevEvent.from === ZONES.MIDFIELD) {
-      const possibleEvents = [OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS];
-      event = getRandomEvent(possibleEvents);
+      event = getRandomEvent([OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS]);
     } else if (prevEvent.key === EVENTS.SHORT_PASS && prevEvent.from === ZONES.OFFENCE) {
-      const possibleEvents = [OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS, OFFENCE_EVENTS.SHOT];
-      event = getRandomEvent(possibleEvents);
+      event = getRandomEvent([OFFENCE_EVENTS.DRIBBLE, OFFENCE_EVENTS.SHORT_PASS, OFFENCE_EVENTS.SHOT]);
     } else if (prevEvent.key === EVENTS.THROUGH_BALL) {
       event = OFFENCE_EVENTS.SHOT;
     } else if (prevEvent.key === EVENTS.DRIBBLE) {
       event = OFFENCE_EVENTS.SHOT;
+    } else {
+      //TODO: Set correct events. F.ex this can be caused when opponent gk misses throw
+      event = getRandomEvent([OFFENCE_EVENTS.SHORT_PASS, OFFENCE_EVENTS.DRIBBLE]);
     }
 
     switch (event) {
@@ -50,67 +45,94 @@ export class OffenceEvents {
   }
 
   shot() {
-    const onTarget = this.attemptingTeam.offence.finishing - random(20);
-    const offTarget = 100 - onTarget;
+    //Hitting woodwork: 1.5-3.5%
 
-    const shotOptions = {
-      'on-target': onTarget / 100,
-      'off-target': offTarget / 100,
-    };
+    const attemptStats = this.attemptingTeam.offence.finishing;
+    const defenceStats = this.oppositionTeam.defence.positioning;
 
-    const shotOutcome = weighted.select(shotOptions);
+    const successProbability = convertRange(attemptStats - defenceStats, [-100, 100], [30, 50]);
 
-    let resultOutcome;
+    if (successProbability > random(100)) {
+      const attacker = this.attemptingTeam.offence.finishing;
+      const goalkeeper = this.oppositionTeam.gk.reflexes;
 
-    if (shotOutcome === 'on-target') {
-      const attacker = this.attemptingTeam.offence.finishing - random(20);
-      const goalkeeper = this.oppositionTeam.gk - random(20);
+      const successProbability = convertRange(attacker - goalkeeper, [-100, 100], [10, 15]);
 
-      //TODO: Calculate chance of deflection, hitting post etc.
-
-      resultOutcome = attacker > goalkeeper ? RESULTS.GOAL : RESULTS.SAVE;
+      if (successProbability > random(100)) {
+        return {
+          key: OFFENCE_EVENTS.SHOT_ON_TARGET,
+          result: RESULTS.GOAL,
+          from: ZONES.OFFENCE,
+          to: ZONES.MIDFIELD,
+          switchTeams: true,
+          logKey: 'shot',
+          isKeyEvent: true,
+          teams: {
+            attempt: this.attemptingTeam,
+            opponent: this.oppositionTeam,
+          },
+        };
+      } else {
+        return {
+          key: OFFENCE_EVENTS.SHOT_ON_TARGET,
+          result: RESULTS.SAVE,
+          from: ZONES.OFFENCE,
+          to: ZONES.GOALKEEPER,
+          switchTeams: true,
+          logKey: 'shot',
+          isKeyEvent: true,
+          teams: {
+            attempt: this.attemptingTeam,
+            opponent: this.oppositionTeam,
+          },
+        };
+      }
     } else {
-      resultOutcome = RESULTS.GOAL_KICK;
+      // TODO: Calculate woodwork, block, deflection etc
+      return {
+        key: OFFENCE_EVENTS.SHOT_OFF_TARGET,
+        result: RESULTS.GOAL_KICK,
+        from: ZONES.OFFENCE,
+        to: ZONES.GOALKEEPER,
+        switchTeams: true,
+        logKey: 'shot',
+        isKeyEvent: true,
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
     }
-
-    return {
-      key: `shot-${shotOutcome}`,
-      result: resultOutcome,
-      from: ZONES.OFFENCE,
-      to: ZONES.OFFENCE,
-      switchTeams: true,
-      logKey: 'shot',
-      isKeyEvent: true,
-      teams: {
-        attempt: this.attemptingTeam,
-        opponent: this.oppositionTeam,
-      },
-    };
   }
 
   dribble() {
-    const attackProbability = this.attemptingTeam.offence.technique - random(20);
-    const defenceProbability = this.oppositionTeam.defence.tackling - random(20);
+    const attackStats = this.attemptingTeam.midfield.technique;
+    const defenceStats = this.oppositionTeam.midfield.tackling;
 
-    if (attackProbability > defenceProbability) {
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [50, 70]);
+
+    if (attackProbability > random(100)) {
       return {
         key: OFFENCE_EVENTS.DRIBBLE,
         result: RESULTS.SUCCESSFUL,
         from: ZONES.OFFENCE,
         to: ZONES.OFFENCE,
         switchTeams: false,
+        logKey: 'dribble',
         teams: {
           attempt: this.attemptingTeam,
           opponent: this.oppositionTeam,
         },
       };
     } else {
+      // TODO: Calculate freekick, injuries etc
       return {
         key: OFFENCE_EVENTS.DRIBBLE,
         result: RESULTS.TACKLED,
         from: ZONES.OFFENCE,
         to: ZONES.OFFENCE,
         switchTeams: true,
+        logKey: 'dribble',
         teams: {
           attempt: this.attemptingTeam,
           opponent: this.oppositionTeam,

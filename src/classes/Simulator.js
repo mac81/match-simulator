@@ -1,49 +1,13 @@
-import { RESULTS, ZONES } from '../events/events';
+import {RESULTS, ZONES} from '../events/events';
 
-import { GoalkeeperEvents } from '../events/Goalkeeper';
-import { DefenceEvents } from '../events/Defence';
-import { MidfieldEvents } from '../events/Midfield';
-import { OffenceEvents } from '../events/Offence';
+import {GoalkeeperEvents} from '../events/Goalkeeper';
+import {DefenceEvents} from '../events/Defence';
+import {MidfieldEvents} from '../events/Midfield';
+import {OffenceEvents} from '../events/Offence';
 
 /* Zones
  | GK | DEF | MID | OFF | GK |
  | 0  |  1  |  2  |  3  | 4  |
- */
-
-/* Pass
- {
- teams: {
- attempt: attackingTeam,
- opponent: defendingTeam
- },
- attempt: {
- type: 'shortpass',
- from: 'defence/midfield/offence',
- to: 'defence/midfield/offence'
- },
- result: {
- type: 'success/failure/intercepted',  //failure.. really bad = throw in/corner, semi bad = intercepted or teammate rescues
- switchTeams: true/false
- }
- }
- */
-
-/* Shot
- {
- teams: {
- attempt: attackingTeam,
- opponent: defendingTeam
- },
- attempt: {
- type: 'shot',
- from: 'offence',
- to: 'offence', (Needed?)
- },
- result: {
- type: 'goal/save/goalkick',
- switchTeams: true/false
- }
- }
  */
 
 export default class Simulator {
@@ -104,15 +68,13 @@ export default class Simulator {
         if (teamInPossession === 0) {
           return this.eventHandler(this.offenceEvents.simulate(prevEvent));
         } else {
-          return this.eventHandler(
-            this.defenceEvents.simulate(this.getAttemptTeam(), this.getOppositionTeam(), prevEvent)
-          );
+          return this.eventHandler(this.defenceEvents.simulate(prevEvent));
         }
     }
   }
 
   eventHandler(event) {
-    if (event.to === ZONES.DEFENCE && event.result === RESULTS.SUCCESSFUL) {
+    if (event.to === ZONES.DEFENCE) {
       this.setBallPosition(this.getTeamInPossession() === 0 ? 1 : 3);
     }
 
@@ -120,7 +82,7 @@ export default class Simulator {
       this.setBallPosition(2);
     }
 
-    if (event.to === ZONES.OFFENCE && event.result === RESULTS.SUCCESSFUL) {
+    if (event.to === ZONES.OFFENCE) {
       this.setBallPosition(this.getTeamInPossession() === 0 ? 3 : 1);
     }
 

@@ -1,4 +1,4 @@
-import { DEFENCE_EVENTS, RESULTS, ZONES, getRandomEvent } from './events';
+import {DEFENCE_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
 
 export class DefenceEvents {
   constructor(simulator) {
@@ -26,6 +26,7 @@ export class DefenceEvents {
       from: ZONES.DEFENCE,
       to: ZONES.MIDFIELD,
       switchTeams: false,
+      logKey: 'passing',
       teams: {
         attempt: this.attemptingTeam,
         opponent: this.oppositionTeam,

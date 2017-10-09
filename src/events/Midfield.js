@@ -1,7 +1,7 @@
 import weighted from 'weighted';
 import {random, convertRange} from '../utils/utils';
 import Simulator from '../classes/Simulator';
-import {MIDFIELD_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
+import {EVENTS, MIDFIELD_EVENTS, SPECIAL_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
 
 export class MidfieldEvents {
   constructor(simulator) {
@@ -15,6 +15,9 @@ export class MidfieldEvents {
 
     if (!prevEvent || prevEvent.result === RESULTS.GOAL) {
       event = SPECIAL_EVENTS.KICKOFF;
+    } else if (prevEvent.key === EVENTS.LONG_PASS) {
+      // TODO: Set to header, reception, free ball etc
+      event = getRandomEvent([MIDFIELD_EVENTS.HEADER]);
     } else {
       event = getRandomEvent(MIDFIELD_EVENTS); //TODO: Make certain eventtypes happen more regularly
     }
@@ -27,7 +30,7 @@ export class MidfieldEvents {
       case MIDFIELD_EVENTS.DRIBBLE:
         return this.dribble();
       case MIDFIELD_EVENTS.HEADER:
-        return this.shortPass(); //TODO: Set correct method
+        return this.header();
       case MIDFIELD_EVENTS.LONG_PASS:
         return this.shortPass(); //TODO: Set correct method
       case MIDFIELD_EVENTS.THROUGH_BALL:
@@ -77,18 +80,33 @@ export class MidfieldEvents {
     const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [70, 90]);
 
     if (attackProbability > random(100)) {
-      return {
-        key: MIDFIELD_EVENTS.SHORT_PASS,
-        result: RESULTS.SUCCESSFUL,
-        from: ZONES.MIDFIELD,
-        to: ZONES.MIDFIELD,
-        switchTeams: false,
-        logKey: 'passing',
-        teams: {
-          attempt: this.attemptingTeam,
-          opponent: this.oppositionTeam,
-        },
-      };
+      if (attackProbability <= 72) {
+        return {
+          key: MIDFIELD_EVENTS.SHORT_PASS,
+          result: RESULTS.FAILED,
+          from: ZONES.MIDFIELD,
+          to: ZONES.MIDFIELD,
+          switchTeams: false,
+          logKey: 'passing',
+          teams: {
+            attempt: this.attemptingTeam,
+            opponent: this.oppositionTeam,
+          },
+        };
+      } else {
+        return {
+          key: MIDFIELD_EVENTS.SHORT_PASS,
+          result: RESULTS.SUCCESSFUL,
+          from: ZONES.MIDFIELD,
+          to: ZONES.MIDFIELD,
+          switchTeams: false,
+          logKey: 'passing',
+          teams: {
+            attempt: this.attemptingTeam,
+            opponent: this.oppositionTeam,
+          },
+        };
+      }
     } else {
       return {
         key: MIDFIELD_EVENTS.SHORT_PASS,
@@ -161,7 +179,7 @@ export class MidfieldEvents {
 
     if (passTo <= this.attemptingTeam.formation[0]) {
       return this.shortPassToDefence();
-    } else if (passTo <= this.attemptingTeam.formation[1]) {
+    } else if (passTo <= this.attemptingTeam.formation[0] + this.attemptingTeam.formation[1]) {
       return this.shortPassToMidfield();
     } else {
       return this.shortPassToOffence();
@@ -230,6 +248,41 @@ export class MidfieldEvents {
         to: ZONES.MIDFIELD,
         switchTeams: true,
         logKey: 'dribble',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    }
+  }
+
+  header() {
+    const attackStats = this.attemptingTeam.midfield.heading;
+    const defenceStats = this.oppositionTeam.midfield.heading;
+
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [50, 70]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: MIDFIELD_EVENTS.HEADER,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.MIDFIELD,
+        to: ZONES.MIDFIELD,
+        switchTeams: false,
+        logKey: 'header',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: MIDFIELD_EVENTS.HEADER,
+        result: RESULTS.FAILED,
+        from: ZONES.MIDFIELD,
+        to: ZONES.MIDFIELD,
+        switchTeams: true,
+        logKey: 'header',
         teams: {
           attempt: this.attemptingTeam,
           opponent: this.oppositionTeam,

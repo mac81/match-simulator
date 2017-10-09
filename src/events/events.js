@@ -7,7 +7,7 @@ export const EVENTS = {
   GOAL_KICK: 'goal-kick',
   KICKOFF: 'kickoff',
   SHORT_THROW: 'short-throw',
-  LONG_KICK: 'long-kick',
+  LONG_THROW: 'long-throw',
   SHORT_PASS: 'short-pass',
   LONG_PASS: 'long-pass',
   THROUGH_BALL: 'through-ball',
@@ -27,7 +27,9 @@ export const SPECIAL_EVENTS = {
 
 export const GOALKEEPER_EVENTS = {
   SHORT_THROW: EVENTS.SHORT_THROW,
-  LONG_KICK: EVENTS.LONG_KICK,
+  LONG_THROW: EVENTS.LONG_THROW,
+  SHORT_PASS: EVENTS.SHORT_PASS,
+  LONG_PASS: EVENTS.LONG_PASS,
 };
 
 export const DEFENCE_EVENTS = {
@@ -64,6 +66,10 @@ export const DRIBBLE_EVENTS = {
 export const SHOT_EVENTS = {
   SHOT_ON_TARGET: EVENTS.SHOT_ON_TARGET,
   SHOT_OFF_TARGET: EVENTS.SHOT_OFF_TARGET,
+};
+
+export const HEADER_EVENTS = {
+  HEADER: EVENTS.HEADER,
 };
 
 // export const EVENTS = {

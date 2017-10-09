@@ -1,13 +1,13 @@
 import Simulator from '../classes/Simulator';
 import i18next from 'i18next';
-import {EVENTS, PASSING_EVENTS, DRIBBLE_EVENTS, SHOT_EVENTS, RESULTS} from '../events/events';
+import {EVENTS, PASSING_EVENTS, DRIBBLE_EVENTS, SHOT_EVENTS, HEADER_EVENTS, RESULTS} from '../events/events';
 
 export class Match {
   constructor(homeTeam, awayTeam) {
     this.simulator = new Simulator(homeTeam, awayTeam);
 
-    const homeTeamId = homeTeam.id;
-    const awayTeamID = awayTeam.id;
+    this.homeTeamId = homeTeam.id;
+    this.awayTeamId = awayTeam.id;
 
     this.time = {
       minutes: 0,
@@ -15,26 +15,36 @@ export class Match {
     };
 
     this.stats = {
+      possession: {
+        [this.homeTeamId]: 0,
+        [this.awayTeamId]: 0,
+      },
       score: {
-        [homeTeamId]: 0,
-        [awayTeamID]: 0,
+        [this.homeTeamId]: 0,
+        [this.awayTeamId]: 0,
       },
       passing: {
         totalPasses: {
-          [homeTeamId]: 0,
-          [awayTeamID]: 0,
+          [this.homeTeamId]: 0,
+          [this.awayTeamId]: 0,
         },
       },
       shot: {
         totalShots: {
-          [homeTeamId]: 0,
-          [awayTeamID]: 0,
+          [this.homeTeamId]: 0,
+          [this.awayTeamId]: 0,
         },
       },
       dribble: {
         totalDribbles: {
-          [homeTeamId]: 0,
-          [awayTeamID]: 0,
+          [this.homeTeamId]: 0,
+          [this.awayTeamId]: 0,
+        },
+      },
+      header: {
+        totalHeaders: {
+          [this.homeTeamId]: 0,
+          [this.awayTeamId]: 0,
         },
       },
     };
@@ -44,16 +54,16 @@ export class Match {
         ...this.stats.passing,
         [event]: {
           [RESULTS.SUCCESSFUL]: {
-            [homeTeamId]: 0,
-            [awayTeamID]: 0,
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
           },
           [RESULTS.FAILED]: {
-            [homeTeamId]: 0,
-            [awayTeamID]: 0,
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
           },
           [RESULTS.INTERCEPTED]: {
-            [homeTeamId]: 0,
-            [awayTeamID]: 0,
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
           },
         },
       };
@@ -64,12 +74,12 @@ export class Match {
         ...this.stats.dribble,
         [event]: {
           [RESULTS.SUCCESSFUL]: {
-            [homeTeamId]: 0,
-            [awayTeamID]: 0,
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
           },
           [RESULTS.TACKLED]: {
-            [homeTeamId]: 0,
-            [awayTeamID]: 0,
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
           },
         },
       };
@@ -79,8 +89,24 @@ export class Match {
       this.stats.shot = {
         ...this.stats.shot,
         [event]: {
-          [homeTeamId]: 0,
-          [awayTeamID]: 0,
+          [this.homeTeamId]: 0,
+          [this.awayTeamId]: 0,
+        },
+      };
+    });
+
+    Object.values(HEADER_EVENTS).forEach(event => {
+      this.stats.header = {
+        ...this.stats.header,
+        [event]: {
+          [RESULTS.SUCCESSFUL]: {
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
+          },
+          [RESULTS.FAILED]: {
+            [this.homeTeamId]: 0,
+            [this.awayTeamId]: 0,
+          },
         },
       };
     });
@@ -92,6 +118,7 @@ export class Match {
       case EVENTS.SHORT_PASS:
       case EVENTS.THROUGH_BALL:
       case EVENTS.DRIBBLE:
+      case EVENTS.HEADER:
         this.time.seconds += 5;
 
         if (this.time.seconds >= 60) {
@@ -120,23 +147,6 @@ export class Match {
         this.time.minutes += 1;
         break;
     }
-    // if(event.key === GENERAL_EVENTS.SHORT_PASS || event.key === EVENTS.THROUGHBALL) {
-    //   this.time.seconds += 5;
-    //
-    //   if(this.time.seconds >= 60) {
-    //     this.time.minutes += 1;
-    //     this.time.seconds = 0;
-    //   }
-    // }
-    //
-    // if(event.key === EVENTS.SHOT_OFF_TARGET || event.key === EVENTS.SHOT_ON_TARGET) {
-    //   this.time.seconds += 15;
-    //
-    //   if(this.time.seconds >= 60) {
-    //     this.time.minutes += 1;
-    //     this.time.seconds = 0;
-    //   }
-    // }
   }
 
   logStats(event) {
@@ -155,13 +165,31 @@ export class Match {
       this.stats[event.logKey]['totalDribbles'][event.teams.attempt.id] += 1;
     }
 
+    if (event.logKey === 'header') {
+      this.stats[event.logKey][event.key][event.result][event.teams.attempt.id] += 1;
+      this.stats[event.logKey]['totalHeaders'][event.teams.attempt.id] += 1;
+    }
+
     if (event.result === 'goal') {
       this.stats['score'][event.teams.attempt.id] += 1;
     }
+
+    this.stats['possession'][event.teams.attempt.id] += 1;
   }
 
   getStats() {
-    return this.stats;
+    const homeTeamPossession = this.stats.possession[this.homeTeamId];
+    const awayTeamPossession = this.stats.possession[this.awayTeamId];
+    const totalPossession = homeTeamPossession + awayTeamPossession;
+
+    return {
+      ...this.stats,
+      possession: {
+        ...this.stats.possession,
+        [this.homeTeamId]: Math.round(homeTeamPossession / totalPossession * 100),
+        [this.awayTeamId]: Math.round(awayTeamPossession / totalPossession * 100),
+      },
+    };
   }
 
   getTime() {
