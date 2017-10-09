@@ -1,3 +1,4 @@
+import {random, convertRange} from '../utils/utils';
 import {DEFENCE_EVENTS, RESULTS, ZONES, getRandomEvent} from './events';
 
 export class DefenceEvents {
@@ -20,6 +21,32 @@ export class DefenceEvents {
   }
 
   shortPass() {
+    const formation = this.attemptingTeam.formation[0] + this.attemptingTeam.formation[1];
+    const passTo = random(formation);
+
+    if (passTo <= this.attemptingTeam.formation[1]) {
+      return this.shortPassToDefence();
+    } else {
+      return this.shortPassToMidfield();
+    }
+  }
+
+  shortPassToDefence() {
+    return {
+      key: DEFENCE_EVENTS.SHORT_PASS,
+      result: RESULTS.SUCCESSFUL,
+      from: ZONES.DEFENCE,
+      to: ZONES.DEFENCE,
+      switchTeams: false,
+      logKey: 'passing',
+      teams: {
+        attempt: this.attemptingTeam,
+        opponent: this.oppositionTeam,
+      },
+    };
+  }
+
+  shortPassToMidfield() {
     return {
       key: DEFENCE_EVENTS.SHORT_PASS,
       result: RESULTS.SUCCESSFUL,
