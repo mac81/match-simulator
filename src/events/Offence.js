@@ -29,6 +29,8 @@ export class OffenceEvents {
       event = OFFENCE_EVENTS.SHOT;
     } else if (prevEvent.key === EVENTS.DRIBBLE) {
       event = OFFENCE_EVENTS.SHOT;
+    } else if (prevEvent.key === EVENTS.LONG_PASS) {
+      event = OFFENCE_EVENTS.HEADER;
     } else {
       //TODO: Set correct events. F.ex this can be caused when opponent gk misses throw
       event = getRandomEvent([OFFENCE_EVENTS.SHORT_PASS, OFFENCE_EVENTS.DRIBBLE]);
@@ -41,6 +43,8 @@ export class OffenceEvents {
         return this.dribble();
       case OFFENCE_EVENTS.SHOT:
         return this.shot();
+      case OFFENCE_EVENTS.HEADER:
+        return this.header();
     }
   }
 
@@ -133,6 +137,41 @@ export class OffenceEvents {
         to: ZONES.OFFENCE,
         switchTeams: true,
         logKey: 'dribble',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    }
+  }
+
+  header() {
+    const attackStats = this.attemptingTeam.offence.heading;
+    const defenceStats = this.oppositionTeam.defence.heading;
+
+    const attackProbability = convertRange(attackStats - defenceStats, [-100, 100], [20, 40]);
+
+    if (attackProbability > random(100)) {
+      return {
+        key: OFFENCE_EVENTS.HEADER,
+        result: RESULTS.SUCCESSFUL,
+        from: ZONES.OFFENCE,
+        to: ZONES.OFFENCE,
+        switchTeams: false,
+        logKey: 'header',
+        teams: {
+          attempt: this.attemptingTeam,
+          opponent: this.oppositionTeam,
+        },
+      };
+    } else {
+      return {
+        key: OFFENCE_EVENTS.HEADER,
+        result: RESULTS.FAILED,
+        from: ZONES.OFFENCE,
+        to: ZONES.OFFENCE,
+        switchTeams: true,
+        logKey: 'header',
         teams: {
           attempt: this.attemptingTeam,
           opponent: this.oppositionTeam,

@@ -3,6 +3,8 @@ import {Match} from './classes/Match';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
+import {Legendary, Epic, Rare, Common, UnCommon} from './teams';
+
 import './App.css';
 
 class App extends Component {
@@ -10,74 +12,8 @@ class App extends Component {
     super(...args);
 
     this.state = {
-      homeTeam: {
-        id: 1,
-        name: 'United',
-        gk: {
-          passing: 100,
-          throwing: 100,
-          arial: 100,
-          reflexes: 100,
-          oneOnOne: 100,
-        },
-        defence: {
-          passing: 100,
-          technique: 100,
-          finishing: 100,
-          positioning: 100,
-          tackling: 100,
-        },
-        midfield: {
-          passing: 100,
-          technique: 100,
-          finishing: 100,
-          positioning: 100,
-          heading: 100,
-          tackling: 100,
-        },
-        offence: {
-          passing: 100,
-          technique: 100,
-          finishing: 100,
-          positioning: 100,
-          tackling: 100,
-        },
-        formation: [4, 4, 2],
-      },
-      awayTeam: {
-        id: 2,
-        name: 'City',
-        gk: {
-          passing: 0,
-          throwing: 0,
-          arial: 0,
-          reflexes: 0,
-          oneOnOne: 0,
-        },
-        defence: {
-          passing: 0,
-          technique: 0,
-          finishing: 0,
-          positioning: 0,
-          tackling: 0,
-        },
-        midfield: {
-          passing: 0,
-          technique: 0,
-          finishing: 0,
-          positioning: 0,
-          tackling: 0,
-          heading: 0,
-        },
-        offence: {
-          passing: 0,
-          technique: 0,
-          finishing: 0,
-          positioning: 0,
-          tackling: 0,
-        },
-        formation: [4, 4, 2],
-      },
+      homeTeam: Epic('Home', 1),
+      awayTeam: Rare('Away', 2),
       currentEvent: null,
       events: [],
     };
@@ -174,19 +110,15 @@ class App extends Component {
           Simulate Event
         </button>
 
-        <div>
-          <Slider onChange={value => this.onStatChange(value, 'homeTeam', 'defence', 'passing')} />
-        </div>
-
         {stats && (
           <div>
             <h2>Match Stats</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Manchester United</th>
+                  <th>Home</th>
                   <th />
-                  <th>Manchester City</th>
+                  <th>Away</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,7 +185,7 @@ class App extends Component {
                 <tr
                   key={index}
                   style={
-                    event.teams.attempt.name === 'United' ? {backgroundColor: 'red'} : {backgroundColor: 'lightblue'}
+                    event.teams.attempt.name === 'Home' ? {backgroundColor: 'red'} : {backgroundColor: 'lightblue'}
                   }>
                   <td>{`${event.time.minutes}:${event.time.seconds}`}</td>
                   <td>{event.from}</td>
